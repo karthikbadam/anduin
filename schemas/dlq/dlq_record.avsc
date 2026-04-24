@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "namespace": "anduin.dlq",
+  "name": "DlqRecord",
+  "doc": "Shared schema across all *.dlq topics. Carries the original bytes and failure context.",
+  "fields": [
+    { "name": "original_topic",   "type": "string" },
+    { "name": "failure_reason",   "type": "string" },
+    { "name": "failure_stage",    "type": {
+        "type": "enum",
+        "name": "FailureStage",
+        "symbols": ["deserialize", "validate", "transform", "produce", "consume", "sink", "unknown"],
+        "default": "unknown"
+    } },
+    { "name": "failed_at",        "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "original_key",     "type": ["null", "bytes"], "default": null },
+    { "name": "original_value",   "type": ["null", "bytes"], "default": null },
+    { "name": "headers",          "type": { "type": "map", "values": "string" }, "default": {} },
+    { "name": "trace_id",         "type": ["null", "string"], "default": null }
+  ]
+}

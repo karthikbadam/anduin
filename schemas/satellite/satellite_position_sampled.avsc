@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "namespace": "anduin.satellite",
+  "name": "SatellitePositionSampled",
+  "doc": "A single propagated satellite position sample. Wrapped in anduin.common.Envelope on the wire.",
+  "fields": [
+    { "name": "envelope",     "type": "anduin.common.Envelope" },
+    { "name": "norad_id",     "type": "string", "doc": "5-digit NORAD catalog ID" },
+    { "name": "name",         "type": ["null", "string"], "default": null },
+    { "name": "position",     "type": "anduin.common.GeoPoint" },
+    { "name": "speed_km_s",   "type": "double" },
+    { "name": "healpix_cell", "type": "long", "doc": "HEALPix NESTED pixel id at nside=64" },
+    { "name": "tle_epoch",    "type": { "type": "long", "logicalType": "timestamp-millis" }, "doc": "UTC epoch of the TLE used for this sample" },
+    { "name": "sampled_at",   "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "tle_source",   "type": {
+        "type": "enum",
+        "name": "TleSource",
+        "symbols": ["fixture", "replay", "celestrak", "n2yo", "spacetrack", "unknown"],
+        "default": "unknown"
+    } }
+  ]
+}

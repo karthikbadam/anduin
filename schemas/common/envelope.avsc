@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "namespace": "anduin.common",
+  "name": "Envelope",
+  "doc": "Standard wrapper around every anduin event. The payload union is extended per topic-specific subject.",
+  "fields": [
+    { "name": "event_id",      "type": { "type": "string", "logicalType": "uuid" } },
+    { "name": "event_version", "type": "int", "default": 1 },
+    { "name": "occurred_at",   "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "ingested_at",   "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "source",        "type": {
+        "type": "enum",
+        "name": "Source",
+        "symbols": ["tle_producer", "ingest_api", "pass_worker", "flink_job", "replay", "unknown"],
+        "default": "unknown"
+    } },
+    { "name": "trace_id",      "type": ["null", "string"], "default": null }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "namespace": "anduin.common",
+  "name": "GeoPoint",
+  "doc": "WGS84 geodetic point. Altitude is optional (0 for ground observers, satellite altitude otherwise).",
+  "fields": [
+    { "name": "lat_deg",     "type": "double" },
+    { "name": "lon_deg",     "type": "double" },
+    { "name": "alt_km",      "type": "double", "default": 0.0 }
+  ]
+}

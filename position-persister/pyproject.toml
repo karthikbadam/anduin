@@ -1,0 +1,22 @@
+[project]
+name = "position-persister"
+version = "0.1.0"
+description = "Consume satellite positions from Kafka → batch-insert into Postgres + Redis hot state."
+requires-python = ">=3.12"
+dependencies = [
+  "aiokafka>=0.12",
+  "cramjam>=2.8",
+  "asyncpg>=0.30",
+  "redis>=5.0",
+  "fastavro>=1.9",
+  "httpx>=0.27",
+  "pydantic-settings>=2.6",
+  "structlog>=24.4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.24", "ruff>=0.7"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

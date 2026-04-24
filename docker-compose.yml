@@ -1,0 +1,192 @@
+# Anduin — Stage 1 compose backbone.
+# Stage 2 adds: flink-jm, flink-tm, pass-worker.
+# Stage 3 adds: dlq-consumer, observability stack (otel-collector, jaeger,
+#   prometheus, grafana, kafka-exporter, redis-exporter).
+
+services:
+  # ───────────────────────────── infra ─────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: anduin-kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"     # host access
+      - "29092:29092"   # internal
+    environment:
+      # KRaft (no Zookeeper) single-node
+      CLUSTER_ID: "anduin-kraft-cluster-0001"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: "CONTROLLER://kafka:9093,PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.0
+    container_name: anduin-schema-registry
+    hostname: schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "PLAINTEXT://kafka:29092"
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: "BACKWARD"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/subjects >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  topic-init:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: anduin-topic-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init-topics.sh:/usr/local/bin/init-topics.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/init-topics.sh"]
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    container_name: anduin-redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    # Cache mode: no persistence (hot state only; durable data lives in Postgres/Kafka)
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: anduin-postgres
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: anduin
+      POSTGRES_PASSWORD: anduin-dev
+      POSTGRES_DB: anduin
+    volumes:
+      - anduin-pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anduin -d anduin"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  # ─────────────────────────── app services ───────────────────────────
+  ingest-api:
+    build: ./ingest-api
+    container_name: anduin-ingest-api
+    hostname: ingest-api
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+    env_file: .env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  query-api:
+    build: ./query-api
+    container_name: anduin-query-api
+    hostname: query-api
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health').read()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  tle-producer:
+    build: ./tle-producer
+    container_name: anduin-tle-producer
+    depends_on:
+      ingest-api:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGEST_API_URL: "http://ingest-api:8000"
+    volumes:
+      - ./tle-producer/fixtures:/app/fixtures
+
+  position-persister:
+    build: ./position-persister
+    container_name: anduin-position-persister
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+    env_file: .env
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    container_name: anduin-frontend
+    depends_on:
+      query-api:
+        condition: service_healthy
+    ports:
+      - "5180:80"
+    environment:
+      VITE_API_BASE: "http://localhost:8001"
+      VITE_WS_BASE: "ws://localhost:8001"
+
+volumes:
+  anduin-pgdata:

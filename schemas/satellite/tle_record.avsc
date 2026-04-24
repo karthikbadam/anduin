@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "namespace": "anduin.satellite",
+  "name": "TleRecord",
+  "doc": "Raw TLE upsert. Keyed by norad_id in a log-compacted topic; intermediate entries may be discarded.",
+  "fields": [
+    { "name": "envelope",       "type": "anduin.common.Envelope" },
+    { "name": "norad_id",       "type": "string" },
+    { "name": "name",           "type": ["null", "string"], "default": null },
+    { "name": "line1",          "type": "string", "doc": "TLE line 1 (69 chars)" },
+    { "name": "line2",          "type": "string", "doc": "TLE line 2 (69 chars)" },
+    { "name": "classification", "type": ["null", "string"], "default": null },
+    { "name": "tle_epoch",      "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "fetched_at",     "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "source",         "type": "anduin.satellite.TleSource" }
+  ]
+}
