@@ -1,6 +1,6 @@
 # Anduin
 
-Real-time satellite tracking platform — event-driven, schema-first, observable by default.
+Real-time satellite tracking platform. Event-driven, schema-first, observable by default.
 
 
 ## Stage 1 quickstart
@@ -12,9 +12,7 @@ make register-schemas   # POSTs Avro schemas with references resolved
 open http://localhost:5173
 ```
 
-`TLE_SOURCE=fixture` (the default) reads `tle-producer/fixtures/active.txt` if present, otherwise falls back to `fixtures/seed.txt` (ISS, Hubble, Tiangong). Run `make refresh-tle-fixture` once to fetch the full Celestrak snapshot — the resulting `active.txt` is gitignored.
-
-During Stage 1 the SGP4 and HEALPix functions are left as `# TODO(me)` stubs for you to implement. Set `STUB_PROPAGATE=true` (the default in `.env.example`) to run the pipeline end-to-end with slow-drifting fixed positions while the stubs are unfilled.
+`TLE_SOURCE=fixture` (the default) reads `tle-producer/fixtures/active.txt` if present, otherwise falls back to `fixtures/seed.txt` (ISS, Hubble, Tiangong). Run `make refresh-tle-fixture` once to fetch the full Celestrak snapshot. 
 
 ## Services
 
@@ -30,9 +28,9 @@ During Stage 1 the SGP4 and HEALPix functions are left as `# TODO(me)` stubs for
 
 ## Stages
 
-- **Stage 1 ✅** — ingest + propagate + live map
-- **Stage 2** — WebSocket streaming + hot cells + pass prediction
-- **Stage 3** — anomaly detection + full observability
+- **Stage 1 ✅**: ingest + propagate + live map
+- **Stage 2**: WebSocket streaming + hot cells + pass prediction
+- **Stage 3**: anomaly detection + full observability
 
 Each stage ends with a reviewable demo and 1–3 algorithm functions stubbed `# TODO(me)` with precise I/O contracts and equations.
 

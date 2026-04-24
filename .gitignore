@@ -32,3 +32,4 @@ tle-producer/fixtures/replay/
 *.log
 logs/
 .celestrak_last_fetch_ms
+CLAUDE.md
