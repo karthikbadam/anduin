@@ -24,6 +24,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from .auth import ApiKey, KeyLookup
 from .config import settings
 from .ratelimit import RateLimiter
+from .ws import WsHub, router as ws_router
 
 log = logging.getLogger("query-api")
 logging.basicConfig(level=logging.INFO)
@@ -47,10 +48,15 @@ async def lifespan(app: FastAPI):
     app.state.redis = redis_asyncio.from_url(settings.redis_url, decode_responses=True)
     app.state.auth = KeyLookup(app.state.pg_pool)
     app.state.limiter = RateLimiter(app.state.redis)
+
+    app.state.ws_hub = WsHub(settings.kafka_bootstrap, settings.schema_registry_url)
+    await app.state.ws_hub.start()
+
     log.info("startup ok")
     try:
         yield
     finally:
+        await app.state.ws_hub.stop()
         await app.state.pg_pool.close()
         await app.state.redis.aclose()
 
@@ -65,6 +71,9 @@ app.add_middleware(
 )
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+
+# Mount WebSocket route.
+app.include_router(ws_router)
 
 
 async def require_api_key(request: Request) -> ApiKey:
