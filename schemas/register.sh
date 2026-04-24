@@ -79,6 +79,21 @@ TLE_REFS=$(jq -n '[
 post_schema "anduin.satellite.tle.v1-value" \
   "$SCHEMAS_DIR/satellite/tle_record.avsc" "$TLE_REFS"
 
+# Pass: references Envelope + GeoPoint
+PASS_REFS=$(jq -n '[
+  {name: "anduin.common.Envelope", subject: "anduin.common.Envelope", version: -1},
+  {name: "anduin.common.GeoPoint", subject: "anduin.common.GeoPoint", version: -1}
+]')
+post_schema "anduin.satellite.pass.v1-value" \
+  "$SCHEMAS_DIR/satellite/satellite_pass_predicted.avsc" "$PASS_REFS"
+
+# Anomaly: references Envelope
+ANOMALY_REFS=$(jq -n '[
+  {name: "anduin.common.Envelope", subject: "anduin.common.Envelope", version: -1}
+]')
+post_schema "anduin.satellite.anomaly.v1-value" \
+  "$SCHEMAS_DIR/satellite/satellite_anomaly_detected.avsc" "$ANOMALY_REFS"
+
 # DLQ shared schema — used by every *.dlq topic
 post_schema "anduin.dlq.DlqRecord" "$SCHEMAS_DIR/dlq/dlq_record.avsc" '[]'
 DLQ_REF=$(jq -n '[{name: "anduin.dlq.DlqRecord", subject: "anduin.dlq.DlqRecord", version: -1}]')

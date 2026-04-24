@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "namespace": "anduin.satellite",
+  "name": "SatellitePassPredicted",
+  "doc": "A single predicted pass-event emitted by pass-worker when a satellite crosses an elevation threshold for a registered observer.",
+  "fields": [
+    { "name": "envelope",      "type": "anduin.common.Envelope" },
+    { "name": "norad_id",      "type": "string" },
+    { "name": "name",          "type": ["null", "string"], "default": null },
+    { "name": "observer_id",   "type": "string", "doc": "sha256(lat|lon) truncated" },
+    { "name": "observer",      "type": "anduin.common.GeoPoint" },
+    { "name": "event_kind",    "type": {
+        "type": "enum",
+        "name": "PassEventKind",
+        "symbols": ["rise_0", "rise_10", "culmination", "set_10", "set_0"]
+    } },
+    { "name": "event_time",    "type": { "type": "long", "logicalType": "timestamp-millis" }, "doc": "Interpolated UTC time of the threshold crossing" },
+    { "name": "elevation_deg", "type": "double" },
+    { "name": "azimuth_deg",   "type": "double" },
+    { "name": "range_km",      "type": "double" },
+    { "name": "visible",       "type": ["null", "boolean"], "default": null, "doc": "null if illumination not yet computed" }
+  ]
+}
