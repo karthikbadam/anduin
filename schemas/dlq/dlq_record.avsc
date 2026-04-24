@@ -6,12 +6,7 @@
   "fields": [
     { "name": "original_topic",   "type": "string" },
     { "name": "failure_reason",   "type": "string" },
-    { "name": "failure_stage",    "type": {
-        "type": "enum",
-        "name": "FailureStage",
-        "symbols": ["deserialize", "validate", "transform", "produce", "consume", "sink", "unknown"],
-        "default": "unknown"
-    } },
+    { "name": "failure_stage",    "type": "string", "doc": "one of: deserialize, validate, transform, produce, consume, sink, unknown" },
     { "name": "failed_at",        "type": { "type": "long", "logicalType": "timestamp-millis" } },
     { "name": "original_key",     "type": ["null", "bytes"], "default": null },
     { "name": "original_value",   "type": ["null", "bytes"], "default": null },

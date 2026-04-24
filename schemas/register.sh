@@ -52,7 +52,11 @@ set_backward_default() {
 }
 
 wait_registry
-set_backward_default
+# Use NONE compat when re-registering after breaking changes; callers can
+# flip back to BACKWARD once the new schema version is the only live one.
+curl -fsS -X PUT -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+    --data '{"compatibility": "NONE"}' "$REGISTRY/config" >/dev/null
+log "global compatibility: NONE (set by register.sh)"
 
 # ─── shared types: registered under explicit *-type subjects ───────────────
 # Order matters: GeoPoint has no refs, Envelope has no refs.
@@ -69,12 +73,9 @@ POSITION_REFS=$(jq -n '[
 post_schema "anduin.satellite.position.v1-value" \
   "$SCHEMAS_DIR/satellite/satellite_position_sampled.avsc" "$POSITION_REFS"
 
-# TLE: references Envelope + the TleSource enum defined inside position schema.
-# Because TleSource is nested inside SatellitePositionSampled, we reference the
-# position schema itself so that named type is resolvable.
+# TLE: references Envelope (TleSource is now a plain string, not an enum).
 TLE_REFS=$(jq -n '[
-  {name: "anduin.common.Envelope", subject: "anduin.common.Envelope", version: -1},
-  {name: "anduin.satellite.SatellitePositionSampled", subject: "anduin.satellite.position.v1-value", version: -1}
+  {name: "anduin.common.Envelope", subject: "anduin.common.Envelope", version: -1}
 ]')
 post_schema "anduin.satellite.tle.v1-value" \
   "$SCHEMAS_DIR/satellite/tle_record.avsc" "$TLE_REFS"

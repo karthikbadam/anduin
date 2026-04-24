@@ -13,21 +13,25 @@ from pyflink.table import EnvironmentSettings, TableEnvironment
 SOURCE_DDL = """
 CREATE TABLE satellite_position (
     `envelope` ROW<
-        `event_id` STRING,
-        `event_version` INT,
-        `occurred_at` TIMESTAMP_LTZ(3),
-        `ingested_at` TIMESTAMP_LTZ(3),
-        `source` STRING,
-        `trace_id` STRING
-    >,
-    `norad_id` STRING,
-    `name` STRING,
-    `position` ROW<`lat_deg` DOUBLE, `lon_deg` DOUBLE, `alt_km` DOUBLE>,
-    `speed_km_s` DOUBLE,
-    `healpix_cell` BIGINT,
-    `tle_epoch` TIMESTAMP_LTZ(3),
-    `sampled_at` TIMESTAMP_LTZ(3),
-    `tle_source` STRING,
+        `event_id`      STRING NOT NULL,
+        `event_version` INT NOT NULL,
+        `occurred_at`   TIMESTAMP(3) NOT NULL,
+        `ingested_at`   TIMESTAMP(3) NOT NULL,
+        `source`        STRING NOT NULL,
+        `trace_id`      STRING
+    > NOT NULL,
+    `norad_id`    STRING NOT NULL,
+    `name`        STRING,
+    `position`    ROW<
+        `lat_deg` DOUBLE NOT NULL,
+        `lon_deg` DOUBLE NOT NULL,
+        `alt_km`  DOUBLE NOT NULL
+    > NOT NULL,
+    `speed_km_s`  DOUBLE NOT NULL,
+    `healpix_cell` BIGINT NOT NULL,
+    `tle_epoch`   TIMESTAMP(3) NOT NULL,
+    `sampled_at`  TIMESTAMP(3) NOT NULL,
+    `tle_source`  STRING NOT NULL,
     `occurred_at` AS `envelope`.`occurred_at`,
     WATERMARK FOR `occurred_at` AS `occurred_at` - INTERVAL '10' SECOND
 ) WITH (
@@ -57,14 +61,17 @@ CREATE TABLE hot_cells (
 QUERY = """
 INSERT INTO hot_cells
 SELECT
-    `healpix_cell`                              AS `cell`,
-    CAST(UNIX_TIMESTAMP(CAST(window_end AS TIMESTAMP)) AS BIGINT) * 1000
-                                                AS `window_end_ms`,
-    COUNT(DISTINCT `norad_id`)                  AS `n_sats`
+    `healpix_cell`                 AS `cell`,
+    TIMESTAMPDIFF(
+        SECOND,
+        TIMESTAMP '1970-01-01 00:00:00',
+        CAST(window_end AS TIMESTAMP)
+    ) * CAST(1000 AS BIGINT)       AS `window_end_ms`,
+    COUNT(DISTINCT `norad_id`)     AS `n_sats`
 FROM TABLE(
     TUMBLE(TABLE `satellite_position`, DESCRIPTOR(`occurred_at`), INTERVAL '1' MINUTE)
 )
-GROUP BY `healpix_cell`, `window_end`
+GROUP BY window_start, window_end, `healpix_cell`
 """
 
 

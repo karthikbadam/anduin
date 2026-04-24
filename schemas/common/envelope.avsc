@@ -8,12 +8,7 @@
     { "name": "event_version", "type": "int", "default": 1 },
     { "name": "occurred_at",   "type": { "type": "long", "logicalType": "timestamp-millis" } },
     { "name": "ingested_at",   "type": { "type": "long", "logicalType": "timestamp-millis" } },
-    { "name": "source",        "type": {
-        "type": "enum",
-        "name": "Source",
-        "symbols": ["tle_producer", "ingest_api", "pass_worker", "flink_job", "replay", "unknown"],
-        "default": "unknown"
-    } },
+    { "name": "source",        "type": "string", "doc": "producer service name (was enum; string for Flink compat)" },
     { "name": "trace_id",      "type": ["null", "string"], "default": null }
   ]
 }

@@ -12,6 +12,6 @@
     { "name": "classification", "type": ["null", "string"], "default": null },
     { "name": "tle_epoch",      "type": { "type": "long", "logicalType": "timestamp-millis" } },
     { "name": "fetched_at",     "type": { "type": "long", "logicalType": "timestamp-millis" } },
-    { "name": "source",         "type": "anduin.satellite.TleSource" }
+    { "name": "source",         "type": "string", "doc": "one of: fixture, replay, celestrak, n2yo, spacetrack, unknown" }
   ]
 }

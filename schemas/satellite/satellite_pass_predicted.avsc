@@ -9,11 +9,7 @@
     { "name": "name",          "type": ["null", "string"], "default": null },
     { "name": "observer_id",   "type": "string", "doc": "sha256(lat|lon) truncated" },
     { "name": "observer",      "type": "anduin.common.GeoPoint" },
-    { "name": "event_kind",    "type": {
-        "type": "enum",
-        "name": "PassEventKind",
-        "symbols": ["rise_0", "rise_10", "culmination", "set_10", "set_0"]
-    } },
+    { "name": "event_kind",    "type": "string", "doc": "one of: rise_0, rise_10, culmination, set_10, set_0" },
     { "name": "event_time",    "type": { "type": "long", "logicalType": "timestamp-millis" }, "doc": "Interpolated UTC time of the threshold crossing" },
     { "name": "elevation_deg", "type": "double" },
     { "name": "azimuth_deg",   "type": "double" },
