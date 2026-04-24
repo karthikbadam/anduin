@@ -12,11 +12,6 @@
     { "name": "healpix_cell", "type": "long", "doc": "HEALPix NESTED pixel id at nside=64" },
     { "name": "tle_epoch",    "type": { "type": "long", "logicalType": "timestamp-millis" }, "doc": "UTC epoch of the TLE used for this sample" },
     { "name": "sampled_at",   "type": { "type": "long", "logicalType": "timestamp-millis" } },
-    { "name": "tle_source",   "type": {
-        "type": "enum",
-        "name": "TleSource",
-        "symbols": ["fixture", "replay", "celestrak", "n2yo", "spacetrack", "unknown"],
-        "default": "unknown"
-    } }
+    { "name": "tle_source",   "type": "string", "doc": "one of: fixture, replay, celestrak, n2yo, spacetrack, unknown" }
   ]
 }

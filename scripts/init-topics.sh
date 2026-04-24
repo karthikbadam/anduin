@@ -26,6 +26,7 @@ create_delete_topic() {
 create_delete_topic anduin.satellite.position.v1 12 86400000       # 24h
 create_delete_topic anduin.satellite.pass.v1      6 604800000      # 7d
 create_delete_topic anduin.satellite.anomaly.v1   3 2592000000     # 30d
+create_delete_topic anduin.sky.hot_cells.v1       3 3600000        # 1h (Flink output)
 
 # DLQ topics — 30d retention
 create_delete_topic anduin.satellite.position.v1.dlq 1 2592000000

@@ -1,7 +1,7 @@
 import { Box, Heading, Stack, Text } from '@chakra-ui/react';
-import type { ActiveSatellite } from '../api/types';
+import type { LivePosition } from '../ws/store';
 
-export function SatelliteList({ items }: { items: ActiveSatellite[] }) {
+export function SatelliteList({ items }: { items: LivePosition[] }) {
   return (
     <Box
       position="absolute"
@@ -9,16 +9,17 @@ export function SatelliteList({ items }: { items: ActiveSatellite[] }) {
       right={4}
       bottom={4}
       w="280px"
-      bg="rgba(20, 20, 24, 0.85)"
+      bg="bg.panel"
       border="1px solid"
       borderColor="bg.border"
       backdropFilter="blur(12px)"
       rounded="md"
       p={3}
       overflowY="auto"
+      opacity={0.94}
       sx={{
         '&::-webkit-scrollbar': { width: '6px' },
-        '&::-webkit-scrollbar-thumb': { background: '#27272a', borderRadius: '3px' },
+        '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-bg-border)', borderRadius: '3px' },
       }}
     >
       <Heading
@@ -38,20 +39,17 @@ export function SatelliteList({ items }: { items: ActiveSatellite[] }) {
             py={1.5}
             px={2}
             rounded="sm"
-            _hover={{ bg: 'whiteAlpha.50' }}
+            _hover={{ bg: 'bg.border' }}
             transition="background 120ms"
           >
             <Text fontSize="sm" fontWeight="medium" color="fg.primary" fontFamily="mono">
               {s.norad_id}
             </Text>
-            {s.position && (
-              <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-                {s.position.lat.toFixed(2)}°, {s.position.lon.toFixed(2)}° ·{' '}
-                {s.position.alt.toFixed(0)} km
-              </Text>
-            )}
+            <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+              {s.lat.toFixed(2)}°, {s.lon.toFixed(2)}° · {s.alt.toFixed(0)} km
+            </Text>
             <Text fontSize="xs" color="fg.subtle">
-              {new Date(s.last_seen_ms).toLocaleTimeString()}
+              {new Date(s.t).toLocaleTimeString()}
             </Text>
           </Box>
         ))}

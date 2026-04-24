@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "namespace": "anduin.satellite",
+  "name": "SatelliteAnomalyDetected",
+  "doc": "Alert emitted by Flink anomaly jobs (Stage 3). Scaffolded in Stage 2 so the topic has a registered value schema and the websocket fanout can bind to it.",
+  "fields": [
+    { "name": "envelope",     "type": "anduin.common.Envelope" },
+    { "name": "norad_id",     "type": "string" },
+    { "name": "anomaly_type", "type": "string", "doc": "one of: conjunction, orbit_decay, tle_stale, reentry_candidate, unexpected_maneuver" },
+    { "name": "severity",     "type": "string", "doc": "one of: info, warn, critical" },
+    { "name": "detected_at",  "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "evidence",     "type": { "type": "map", "values": "string" }, "default": {}, "doc": "Free-form evidence (e.g., counterparty norad_id, range_km, altitude series)" }
+  ]
+}

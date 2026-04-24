@@ -6,6 +6,8 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://redis:6379/0"
     postgres_dsn: str = "postgresql://anduin:anduin-dev@postgres:5432/anduin"
+    kafka_bootstrap: str = "kafka:29092"
+    schema_registry_url: str = "http://schema-registry:8081"
     service_name: str = "query-api"
     cors_origins: str = "http://localhost:5173,http://localhost:4173"
 

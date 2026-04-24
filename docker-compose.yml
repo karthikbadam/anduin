@@ -174,6 +174,56 @@ services:
         condition: service_completed_successfully
     env_file: .env
 
+  pass-worker:
+    build: ./pass-worker
+    container_name: anduin-pass-worker
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+    env_file: .env
+
+  # ─────────────────────────── Flink cluster ──────────────────────────
+  # Single JM + 1 TM. UI on host port 18081 (8081 is used by schema-registry).
+  flink-jm:
+    build: ./flink-jobs
+    container_name: anduin-flink-jm
+    hostname: flink-jm
+    command: jobmanager
+    ports:
+      - "18081:8081"
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jm
+        state.backend: hashmap
+        rest.address: flink-jm
+        rest.bind-address: 0.0.0.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+
+  flink-tm:
+    build: ./flink-jobs
+    container_name: anduin-flink-tm
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jm
+        taskmanager.numberOfTaskSlots: 4
+        taskmanager.memory.process.size: 1728m
+    depends_on:
+      flink-jm:
+        condition: service_started
+
   frontend:
     build:
       context: ./frontend

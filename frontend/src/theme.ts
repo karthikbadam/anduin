@@ -1,39 +1,33 @@
 import { extendTheme, type ThemeConfig } from '@chakra-ui/react';
 
+// Default to the user's system mode; users can toggle with the StatusBar switch.
 const config: ThemeConfig = {
-  initialColorMode: 'dark',
-  useSystemColorMode: false,
+  initialColorMode: 'system',
+  useSystemColorMode: true,
 };
 
-// Palette matches karthikbadam.com: restrained zinc/neutral dark, no saturated
-// accent. Data points on the map use white-with-alpha instead of cyan so they
-// read as faint stars rather than a brand color.
+// Palette uses semantic tokens so every chrome element responds to the
+// light/dark toggle. Dark mode stays near-black zinc (matches karthikbadam.com);
+// light mode is a warm off-white with the same restrained hierarchy.
 export const theme = extendTheme({
   config,
-  colors: {
-    bg: {
-      body: '#0a0a0b',      // ~zinc-950 with a hint of warmth
-      panel: '#141418',     // card/sidebar background
-      border: '#27272a',    // ~zinc-800
-    },
-    fg: {
-      primary: '#e4e4e7',   // ~zinc-200
-      muted: '#a1a1aa',     // ~zinc-400
-      subtle: '#71717a',    // ~zinc-500
-    },
-    // Reserved accents (Stage 2/3 alerts + pass visibility). Kept warm/low-sat.
-    accent: {
-      amber: '#f59e0b',
-      red: '#ef4444',
-      green: '#22c55e',
+  semanticTokens: {
+    colors: {
+      'bg.body':    { default: '#fafaf9', _dark: '#0a0a0b' },
+      'bg.panel':   { default: '#ffffff', _dark: '#141418' },
+      'bg.border':  { default: '#e4e4e7', _dark: '#27272a' },
+      'fg.primary': { default: '#18181b', _dark: '#e4e4e7' },
+      'fg.muted':   { default: '#52525b', _dark: '#a1a1aa' },
+      'fg.subtle':  { default: '#71717a', _dark: '#71717a' },
+      // Reserved accents (stage 2 pass badges, stage 3 alerts).
+      'accent.amber': { default: '#d97706', _dark: '#f59e0b' },
+      'accent.red':   { default: '#dc2626', _dark: '#ef4444' },
+      'accent.green': { default: '#16a34a', _dark: '#22c55e' },
     },
   },
   styles: {
     global: {
-      body: {
-        bg: 'bg.body',
-        color: 'fg.primary',
-      },
+      body: { bg: 'bg.body', color: 'fg.primary' },
     },
   },
 });

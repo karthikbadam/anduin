@@ -37,6 +37,9 @@ seed:
 refresh-tle-fixture:
 	$(COMPOSE) run --rm -T tle-producer python -m app.sources.celestrak --refresh-fixture
 
+submit-flink-jobs:
+	$(COMPOSE) exec -T flink-jm flink run -d -py /opt/flink/jobs/01_hot_sky_cells.py
+
 test:
 	@set -e; for svc in ingest-api query-api tle-producer position-persister; do \
 		if [ -f $$svc/pyproject.toml ]; then \
