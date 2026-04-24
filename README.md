@@ -1,8 +1,7 @@
-# anduin
+# Anduin
 
 Real-time satellite tracking platform — event-driven, schema-first, observable by default.
 
-Detailed plan lives at `~/.claude/plans/https-github-com-karthikbadam-rideflow-b-melodic-waterfall.md`.
 
 ## Stage 1 quickstart
 
@@ -50,5 +49,3 @@ open http://localhost:5180  # live map
 Dev API key `dev-key-anduin-local-only` (sha256-hashed in Postgres; rate limit bumped in-DB from 120 → 30000 rpm to support full-catalog ingest). `TLE_SOURCE=fixture` by default; `tle-producer/fixtures/active.txt` (gitignored) is the full catalog from `make refresh-tle-fixture`.
 
 TODO(me) stubs still unfilled: `tle-producer/app/propagate.py::propagate_position` and `tle-producer/app/healpix.py::lonlat_to_healpix`. Set `STUB_PROPAGATE=false` once implemented.
-
-Nothing is committed yet — fresh `git init`.
