@@ -25,6 +25,7 @@ from typing import Any
 
 from aiokafka import AIOKafkaConsumer
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
+import redis.asyncio as redis_asyncio
 
 from .codec import SchemaCache
 
@@ -87,11 +88,14 @@ class WsClient:
 
 
 class WsHub:
-    """Single consumer, fan-out to N WS clients via asyncio.Queue per client."""
+    """Single consumer, fan-out to N WS clients via asyncio.Queue per client.
+    Also writes pass events to Redis list `passes:{observer_id}` so /passes
+    has data without needing a second consumer group."""
 
-    def __init__(self, kafka_bootstrap: str, schema_registry: str):
+    def __init__(self, kafka_bootstrap: str, schema_registry: str, redis: redis_asyncio.Redis):
         self.bootstrap = kafka_bootstrap
         self.cache = SchemaCache(schema_registry)
+        self.redis = redis
         self.clients: set[WsClient] = set()
         self._consumer: AIOKafkaConsumer | None = None
         self._task: asyncio.Task | None = None
@@ -132,6 +136,11 @@ class WsHub:
                     continue
                 friendly = KAFKA_TO_FRIENDLY.get(msg.topic, msg.topic)
                 frame = {"topic": friendly, "ts": int(time.time() * 1000), "data": decoded}
+
+                # Side-effect: cache pass events in Redis so /passes has data.
+                if friendly == "passes":
+                    await self._cache_pass(decoded)
+
                 for c in list(self.clients):
                     if c.matches(friendly, decoded):
                         c.offer(frame)
@@ -145,6 +154,34 @@ class WsHub:
 
     def unregister(self, client: WsClient) -> None:
         self.clients.discard(client)
+
+    async def _cache_pass(self, decoded: dict) -> None:
+        """Push a pass event onto Redis `passes:{observer_id}` (newest first).
+        /passes reads these back on demand. TTL + cap prevents unbounded growth.
+        """
+        oid = decoded.get("observer_id")
+        if not oid:
+            return
+        et = decoded.get("event_time")
+        if isinstance(et, datetime):
+            et_iso = et.astimezone(timezone.utc).isoformat()
+        else:
+            et_iso = str(et) if et else ""
+        entry = {
+            "norad_id": decoded.get("norad_id"),
+            "name": decoded.get("name"),
+            "event_kind": decoded.get("event_kind"),
+            "event_time": et_iso,
+            "elevation_deg": decoded.get("elevation_deg"),
+            "azimuth_deg": decoded.get("azimuth_deg"),
+            "range_km": decoded.get("range_km"),
+        }
+        key = f"passes:{oid}"
+        pipe = self.redis.pipeline()
+        pipe.lpush(key, _to_json(entry))
+        pipe.ltrim(key, 0, 500)
+        pipe.expire(key, 48 * 3600)
+        await pipe.execute()
 
 
 # ───────────────────────────── WebSocket route ─────────────────────────────

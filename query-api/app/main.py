@@ -23,7 +23,9 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from .auth import ApiKey, KeyLookup
 from .config import settings
+from .deps import require_api_key
 from .ratelimit import RateLimiter
+from .routes_passes import router as passes_router
 from .ws import WsHub, router as ws_router
 
 log = logging.getLogger("query-api")
@@ -49,7 +51,11 @@ async def lifespan(app: FastAPI):
     app.state.auth = KeyLookup(app.state.pg_pool)
     app.state.limiter = RateLimiter(app.state.redis)
 
-    app.state.ws_hub = WsHub(settings.kafka_bootstrap, settings.schema_registry_url)
+    app.state.ws_hub = WsHub(
+        settings.kafka_bootstrap,
+        settings.schema_registry_url,
+        app.state.redis,
+    )
     await app.state.ws_hub.start()
 
     log.info("startup ok")
@@ -66,32 +72,15 @@ app = FastAPI(title="anduin-query-api", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_list(),
-    allow_methods=["GET", "OPTIONS"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["X-API-Key", "X-Trace-Id", "Content-Type", "traceparent"],
 )
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
-# Mount WebSocket route.
+# Mount WebSocket + REST routers.
 app.include_router(ws_router)
-
-
-async def require_api_key(request: Request) -> ApiKey:
-    raw = request.headers.get("x-api-key")
-    if not raw:
-        raise HTTPException(status_code=401, detail="missing x-api-key")
-    key = await request.app.state.auth.lookup(raw)
-    if key is None:
-        raise HTTPException(status_code=401, detail="invalid api key")
-    request.state.api_key = key
-    result = await request.app.state.limiter.check(key.key_id, key.rate_per_minute)
-    if not result.allowed:
-        raise HTTPException(
-            status_code=429,
-            detail="rate limit exceeded",
-            headers={"Retry-After": str(max(1, result.retry_after_ms // 1000))},
-        )
-    return key
+app.include_router(passes_router)
 
 
 @app.get("/health")
