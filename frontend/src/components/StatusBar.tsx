@@ -1,5 +1,6 @@
-import { Box, HStack, IconButton, Input, Text, useColorMode } from '@chakra-ui/react';
+import { Box, HStack, IconButton, Input, Link, Text, useColorMode } from '@chakra-ui/react';
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { getApiKey, setApiKey } from '../api/client';
 
 // Small inline SVGs — avoids pulling in an icon dep.
@@ -54,6 +55,10 @@ export function StatusBar({ activeCount, connected }: { activeCount: number; con
         <Text fontSize="xs" color="fg.subtle">
           · {activeCount} active
         </Text>
+        <Link as={RouterLink} to="/passes" fontSize="xs" color="fg.muted"
+              _hover={{ color: 'fg.primary' }}>
+          passes →
+        </Link>
         <HStack ml="auto" spacing={2}>
           <Text fontSize="xs" color="fg.subtle">
             api key
