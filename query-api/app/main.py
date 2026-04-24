@@ -24,8 +24,10 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from .auth import ApiKey, KeyLookup
 from .config import settings
 from .deps import require_api_key
+from .hot_cells import HotCellsConsumer
 from .ratelimit import RateLimiter
 from .routes_passes import router as passes_router
+from .routes_zones import router as zones_router
 from .ws import WsHub, router as ws_router
 
 log = logging.getLogger("query-api")
@@ -58,10 +60,14 @@ async def lifespan(app: FastAPI):
     )
     await app.state.ws_hub.start()
 
+    app.state.hot_cells = HotCellsConsumer(settings.kafka_bootstrap, app.state.redis)
+    await app.state.hot_cells.start()
+
     log.info("startup ok")
     try:
         yield
     finally:
+        await app.state.hot_cells.stop()
         await app.state.ws_hub.stop()
         await app.state.pg_pool.close()
         await app.state.redis.aclose()
@@ -81,6 +87,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_sch
 # Mount WebSocket + REST routers.
 app.include_router(ws_router)
 app.include_router(passes_router)
+app.include_router(zones_router)
 
 
 @app.get("/health")

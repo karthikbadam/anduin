@@ -1,8 +1,11 @@
 import { Box, useColorMode } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { fetchHotCells } from '../api/zones';
 import { Globe } from '../components/Globe';
 import { SatelliteList } from '../components/SatelliteList';
 import { StatusBar } from '../components/StatusBar';
+import { createHotCellsLayer } from '../components/layers/hotCellsLayer';
 import {
   type HeadDot,
   createSatellitePointsLayer,
@@ -60,12 +63,22 @@ export function DashboardPage() {
     return out;
   }, [trailsVersion]);
 
+  // Hot-cells heatmap — polled every 30 s; Flink writes new windows once a minute.
+  const { data: hotCells } = useQuery({
+    queryKey: ['zones', 'hot'],
+    queryFn: () => fetchHotCells(400),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
   const layers = useMemo(
     () => [
+      // Hot cells rendered below everything else so dots sit on top.
+      createHotCellsLayer(hotCells?.features ?? [], isDark),
       createTrailDotsLayer(trailsRef.current, trailsVersion, isDark),
       createSatellitePointsLayer(heads, trailsVersion, isDark),
     ],
-    [heads, trailsVersion, isDark],
+    [heads, trailsVersion, isDark, hotCells],
   );
 
   // Sidebar shows latest 50 by age (still useful as a "recent activity" feed).

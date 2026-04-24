@@ -17,6 +17,8 @@ dependencies = [
   "fastavro>=1.9",
   "httpx>=0.27",
   "websockets>=14",
+  "healpy>=1.17",
+  "numpy>=2.0",
 ]
 
 [dependency-groups]
